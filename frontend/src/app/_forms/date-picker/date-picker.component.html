@@ -1,0 +1,15 @@
+<div class="mb-3 form-floating">
+  <input
+    [class.is-invalid]="control.invalid && control.touched"
+    [formControl]="control"
+    class="form-control"
+    placeholder="Date of birth"
+    bsDatepicker
+    [bsConfig]="bsConfig"
+    [maxDate]="maxDate()"
+  />
+  <label>Date of birth</label>
+  <div *ngIf="control.hasError('required')" class="invalid-feedback text-start">
+    Please enter date of birth
+  </div>
+</div>
