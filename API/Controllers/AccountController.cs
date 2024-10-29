@@ -46,7 +46,8 @@ public class AccountController(DataContext context, ITokenService tokenService, 
     {
       Username = registerDto.Username,
       KnownAs = user.KnownAs,
-      Token = _tokenService.CreateToken(user)
+      Gender = user.Gender,
+      Token = _tokenService.CreateToken(user),
     };
   }
 
@@ -75,6 +76,7 @@ public class AccountController(DataContext context, ITokenService tokenService, 
     {
       Username = user.UserName,
       KnownAs = user.KnownAs,
+      Gender = user.Gender,
       Token = _tokenService.CreateToken(user),
       MainPhotoUrl = mainPhoto?.Url
     };
