@@ -19,6 +19,12 @@
           Messages
         </a>
       </li>
+
+      <li class="nav-item" *appHasRole="['Admin', 'Moderator']">
+        <a routerLink="/admin" routerLinkActive="active" class="nav-link">
+          Administration
+        </a>
+      </li>
       }
       <li class="nav-item">
         <a routerLink="/errors" routerLinkActive="active" class="nav-link">
