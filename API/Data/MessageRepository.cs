@@ -48,13 +48,12 @@ public class MessageRepository(DataContext dataContext, IMapper mapper) : IMessa
   public async Task<IEnumerable<MessageDto>> GetMessageThread(string currentUsername, string recipientUsername)
   {
     var messages = await _dataContext.Messages
-      .Include(x => x.Sender).ThenInclude(x => x.Photos)
-      .Include(x => x.Recipient).ThenInclude(x => x.Photos)
       .Where(x =>
         x.RecipientUsername == currentUsername && !x.RecipientDeleted && x.SenderUsername == recipientUsername ||
         x.RecipientUsername == recipientUsername && !x.SenderDeleted && x.SenderUsername == currentUsername
       )
       .OrderBy(x => x.Sent)
+      .ProjectTo<MessageDto>(mapper.ConfigurationProvider)
       .ToListAsync();
 
     var unreadMessages = messages
@@ -67,11 +66,42 @@ public class MessageRepository(DataContext dataContext, IMapper mapper) : IMessa
       await _dataContext.SaveChangesAsync();
     }
 
-    return mapper.Map<IEnumerable<MessageDto>>(messages);
+    return messages;
+  }
+
+  public void AddGroup(Group group)
+  {
+    _dataContext.Groups.Add(group);
+  }
+
+  public async Task<Connection?> GetConnection(string connectionId)
+  {
+    return await _dataContext.Connections.FindAsync(connectionId);
+  }
+
+  public async Task<Group?> GetMessageGroup(string groupName)
+  {
+    return await _dataContext.Groups
+      .Include(x => x.Connections)
+      .FirstOrDefaultAsync(x => x.Name == groupName);
+  }
+
+  public void RemoveConnection(Connection connection)
+  {
+    _dataContext.Connections.Remove(connection);
+  }
+
+  public async Task<Group?> GetGroupForConnection(string connectionId)
+  {
+    return await _dataContext.Groups
+      .Include(g => g.Connections)
+      .Where(g => g.Connections.Any(c => c.ConnectionId == connectionId))
+      .FirstOrDefaultAsync();
   }
 
   public async Task<bool> SaveAllAsync()
   {
     return await _dataContext.SaveChangesAsync() > 0;
   }
+
 }

@@ -8,14 +8,63 @@ import {
   setPaginationHeaders,
 } from './pagination-helper';
 import { Container as MessageContainer } from '../_types/container-type';
+import {
+  HubConnection,
+  HubConnectionBuilder,
+  HubConnectionState,
+} from '@microsoft/signalr';
+import { User } from '../_models/user';
+import { Group } from '../_models/group';
 
 @Injectable({
   providedIn: 'root',
 })
 export class MessageService {
   baseUrl = environment.apiUrl;
+  hubUrl = environment.hubsUrl;
   private httpClient = inject(HttpClient);
+  hubConnection?: HubConnection;
   paginatedResult = signal<PaginatedResult<Message[]> | null>(null);
+  messageThread = signal<Message[]>([]);
+
+  createHubConnection(user: User, otherUsername: string) {
+    this.hubConnection = new HubConnectionBuilder()
+      .withUrl(`${this.hubUrl}/messages?user=${otherUsername}`, {
+        accessTokenFactory: () => user.token,
+      })
+      .withAutomaticReconnect()
+      .build();
+
+    this.hubConnection.start().catch((err) => console.log(err));
+
+    this.hubConnection.on('ReceiveMessageThread', (msgs) => {
+      this.messageThread.set(msgs);
+    });
+
+    this.hubConnection.on('NewMessage', (message) => {
+      this.messageThread.update((messages) => [...messages, message]);
+    });
+
+    this.hubConnection.on('UpdatedGroup', (group: Group) => {
+      if (group.connections.some((c) => c.username === otherUsername)) {
+        this.messageThread.update((messages) => {
+          messages.forEach((message) => {
+            if (!message.dateRead) {
+              message.dateRead = new Date(Date.now());
+            }
+          });
+
+          return messages;
+        });
+      }
+    });
+  }
+
+  stopHubConnection() {
+    if (this.hubConnection?.state === HubConnectionState.Connected) {
+      this.hubConnection.stop().catch((err) => console.log(err));
+    }
+  }
 
   getMessages(
     pageNumber: number,
@@ -43,8 +92,8 @@ export class MessageService {
     );
   }
 
-  sendMessage(username: string, content: string) {
-    return this.httpClient.post<Message>(`${this.baseUrl}/messages`, {
+  async sendMessage(username: string, content: string) {
+    return this.hubConnection?.invoke('SendMessage', {
       recipientUsername: username,
       content,
     });
