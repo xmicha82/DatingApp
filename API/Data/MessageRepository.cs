@@ -47,26 +47,24 @@ public class MessageRepository(DataContext dataContext, IMapper mapper) : IMessa
 
   public async Task<IEnumerable<MessageDto>> GetMessageThread(string currentUsername, string recipientUsername)
   {
-    var messages = await _dataContext.Messages
+    var messagesQuery = _dataContext.Messages
       .Where(x =>
         x.RecipientUsername == currentUsername && !x.RecipientDeleted && x.SenderUsername == recipientUsername ||
         x.RecipientUsername == recipientUsername && !x.SenderDeleted && x.SenderUsername == currentUsername
       )
       .OrderBy(x => x.Sent)
-      .ProjectTo<MessageDto>(mapper.ConfigurationProvider)
-      .ToListAsync();
+      .AsQueryable();
 
-    var unreadMessages = messages
+    var unreadMessages = messagesQuery
       .Where(x => x.DateRead == null && x.RecipientUsername == currentUsername)
       .ToList();
 
     if (unreadMessages.Count != 0)
     {
       unreadMessages.ForEach(x => x.DateRead = DateTime.UtcNow);
-      await _dataContext.SaveChangesAsync();
     }
 
-    return messages;
+    return await messagesQuery.ProjectTo<MessageDto>(mapper.ConfigurationProvider).ToListAsync();
   }
 
   public void AddGroup(Group group)
@@ -98,10 +96,4 @@ public class MessageRepository(DataContext dataContext, IMapper mapper) : IMessa
       .Where(g => g.Connections.Any(c => c.ConnectionId == connectionId))
       .FirstOrDefaultAsync();
   }
-
-  public async Task<bool> SaveAllAsync()
-  {
-    return await _dataContext.SaveChangesAsync() > 0;
-  }
-
 }

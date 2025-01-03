@@ -17,3 +17,9 @@
 .rounded-circle {
   max-height: 50px;
 }
+
+.chat-scroll {
+  overflow-y: scroll;
+  max-height: 500px;
+  scroll-behavior: smooth
+}

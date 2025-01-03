@@ -3,7 +3,7 @@
     @if (messageService.messageThread().length === 0) {
     <p>No messages yet</p>
     } @else {
-    <ul class="chat">
+    <ul class="chat chat-scroll" #scrollMe>
       @for (message of messageService.messageThread(); track message.id) {
       <li>
         <div>
