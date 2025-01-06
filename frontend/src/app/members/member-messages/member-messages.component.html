@@ -57,6 +57,10 @@
           [disabled]="!messageForm.valid"
         >
           Send
+          <!--  -->
+          @if (loading) {
+          <i class="fa fa-spinner fa-spin"></i>
+          }
         </button>
       </div>
     </form>
