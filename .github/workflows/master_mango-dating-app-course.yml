@@ -16,18 +16,20 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up node.js
-        uses: actions/setup-node@v3
+      - name: Set up bun.js
+        uses: oven-sh/setup-bun@v2
         with:
-          node-version: '20'
+          bun-version: latest
 
       - name: Install Angular CLI
-        run: npm i -g @angular/cli@17
+        run: |
+          bun install -g @angular/cli@17
+          ng config -g cli.packageManager bun
 
       - name: Install deps and build
         run: |
           cd frontend
-          npm install
+          bun install
           ng build
 
       - name: Set up .NET Core
